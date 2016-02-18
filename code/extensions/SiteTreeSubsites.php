@@ -3,7 +3,7 @@
 /**
  * Extension for the SiteTree object to add subsites support
  */
-class SiteTreeSubsites extends DataExtension
+class  SiteTreeSubsites extends DataExtension
 {
     private static $has_one = array(
         'Subsite' => 'Subsite', // The subsite that this page belongs to
@@ -24,7 +24,7 @@ class SiteTreeSubsites extends DataExtension
         }
         return false;
     }
-    
+
     /**
      * Update any requests to limit the results to the current site
      */
@@ -36,7 +36,7 @@ class SiteTreeSubsites extends DataExtension
         if ($dataQuery->getQueryParam('Subsite.filter') === false) {
             return;
         }
-        
+
         // If you're querying by ID, ignore the sub-site - this is a bit ugly...
         // if(!$query->where || (strpos($query->where[0], ".\"ID\" = ") === false && strpos($query->where[0], ".`ID` = ") === false && strpos($query->where[0], ".ID = ") === false && strpos($query->where[0], "ID = ") !== 0)) {
         if ($query->filtersOnID()) {
@@ -60,13 +60,13 @@ class SiteTreeSubsites extends DataExtension
             break;
         }
     }
-    
+
     public function onBeforeWrite()
     {
         if (!$this->owner->ID && !$this->owner->SubsiteID) {
             $this->owner->SubsiteID = Subsite::currentSubsiteID();
         }
-        
+
         parent::onBeforeWrite();
     }
 
@@ -107,7 +107,10 @@ class SiteTreeSubsites extends DataExtension
         if ($subsite && $subsite->exists()) {
             // Use baseurl from domain
             $baseLink = $subsite->absoluteBaseURL();
-            
+
+            //HAMAKA: fix voor project mappen locale omgeving in URL opnemen
+						if (Config::inst()->get('HmkMain', 'HostId')=='LOC') $baseLink .= explode('/',Director::absoluteBaseURL())[3] . '/';
+
             // Add parent page if enabled
             if($nested_urls_enabled && $this->owner->ParentID) {
                 $baseLink = Controller::join_links(
@@ -115,12 +118,12 @@ class SiteTreeSubsites extends DataExtension
                     $this->owner->Parent()->RelativeLink(true)
                 );
             }
-            
+
             $urlsegment = $fields->dataFieldByName('URLSegment');
             $urlsegment->setURLPrefix($baseLink);
         }
     }
-    
+
     public function alternateSiteConfig()
     {
         if (!$this->owner->SubsiteID) {
@@ -136,12 +139,12 @@ class SiteTreeSubsites extends DataExtension
         }
         return $sc;
     }
-    
+
     /**
      * Only allow editing of a page if the member satisfies one of the following conditions:
      * - Is in a group which has access to the subsite this page belongs to
      * - Is in a group with edit permissions on the "main site"
-     * 
+     *
      * @return boolean
      */
     public function canEdit($member = null)
@@ -149,7 +152,7 @@ class SiteTreeSubsites extends DataExtension
         if (!$member) {
             $member = Member::currentUser();
         }
-        
+
         // Find the sites that this user has access to
         $goodSites = Subsite::accessible_sites('CMS_ACCESS_CMSMain', true, 'all', $member)->column('ID');
 
@@ -169,7 +172,7 @@ class SiteTreeSubsites extends DataExtension
             return false;
         }
     }
-    
+
     /**
      * @return boolean
      */
@@ -178,10 +181,10 @@ class SiteTreeSubsites extends DataExtension
         if (!$member && $member !== false) {
             $member = Member::currentUser();
         }
-        
+
         return $this->canEdit($member);
     }
-    
+
     /**
      * @return boolean
      */
@@ -190,10 +193,10 @@ class SiteTreeSubsites extends DataExtension
         if (!$member && $member !== false) {
             $member = Member::currentUser();
         }
-        
+
         return $this->canEdit($member);
     }
-    
+
     /**
      * @return boolean
      */
@@ -218,7 +221,7 @@ class SiteTreeSubsites extends DataExtension
         } else {
             $subsite = DataObject::get_by_id('Subsite', $subsiteID);
         }
-        
+
         $oldSubsite=Subsite::currentSubsiteID();
         if ($subsiteID) {
             Subsite::changeSubsite($subsiteID);
@@ -294,7 +297,7 @@ class SiteTreeSubsites extends DataExtension
         // Set LinkTracking appropriately
         $links = HTTP::getLinksIn($this->owner->Content);
         $linkedPages = array();
-        
+
         if ($links) {
             foreach ($links as $link) {
                 if (substr($link, 0, strlen('http://')) == 'http://') {
@@ -302,7 +305,7 @@ class SiteTreeSubsites extends DataExtension
                     if (strpos($withoutHttp, '/') && strpos($withoutHttp, '/') < strlen($withoutHttp)) {
                         $domain = substr($withoutHttp, 0, strpos($withoutHttp, '/'));
                         $rest = substr($withoutHttp, strpos($withoutHttp, '/') + 1);
-                    
+
                         $subsiteID = Subsite::getSubsiteIDForDomain($domain);
                         if ($subsiteID == 0) {
                             continue;
@@ -312,7 +315,7 @@ class SiteTreeSubsites extends DataExtension
                         Subsite::disable_subsite_filter(true);
                         $candidatePage = DataObject::get_one("SiteTree", "\"URLSegment\" = '" . Convert::raw2sql(urldecode($rest)) . "' AND \"SubsiteID\" = " . $subsiteID, false);
                         Subsite::disable_subsite_filter($origDisableSubsiteFilter);
-                    
+
                         if ($candidatePage) {
                             $linkedPages[] = $candidatePage->ID;
                         } else {
@@ -322,10 +325,10 @@ class SiteTreeSubsites extends DataExtension
                 }
             }
         }
-        
+
         $this->owner->CrossSubsiteLinkTracking()->setByIDList($linkedPages);
     }
-    
+
     /**
      * Return a piece of text to keep DataObject cache keys appropriately specific
      */
@@ -333,7 +336,7 @@ class SiteTreeSubsites extends DataExtension
     {
         return 'subsite-'.Subsite::currentSubsiteID();
     }
-    
+
     /**
      * @param Member
      * @return boolean|null

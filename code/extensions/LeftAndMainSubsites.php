@@ -102,10 +102,21 @@ class LeftAndMainSubsites extends Extension
      * Returns a list of the subsites accessible to the current user.
      * It's enough for any section to be accessible for the section to be included.
      */
-    public function Subsites()
-    {
-        return Subsite::all_accessible_sites();
-    }
+   public function Subsites() {
+		// figure out what permission the controller needs
+		// Subsite::accessible_sites() expects something, so if there's no permission
+		// then fallback to using CMS_ACCESS_LeftAndMain.
+		$permission = 'CMS_ACCESS_' . $this->owner->class;
+		$available = Permission::get_codes(false);
+		if(!isset($available[$permission])) {
+			$permission = $this->owner->stat('required_permission_codes');
+			if(!$permission) {
+				$permission = 'CMS_ACCESS_LeftAndMain';
+			}
+		}
+
+		return Subsite::accessible_sites($permission, false); // hamaka hmk custom - de false aan het einde zorg voor uitsluiten mainsite
+	}
 
     /*
      * Generates a list of subsites with the data needed to 
@@ -113,31 +124,31 @@ class LeftAndMainSubsites extends Extension
      * @return ArrayList
      */
 
-    public function ListSubsites()
-    {
-        $list = $this->Subsites();
-        $currentSubsiteID = Subsite::currentSubsiteID();
+   public function ListSubsites(){
+		$list = $this->Subsites();
+		$currentSubsiteID = Subsite::currentSubsiteID();
 
-        if ($list == null || $list->Count() == 1 && $list->First()->DefaultSite == true) {
-            return false;
-        }
+		if($list == null || $list->Count() == 1 && $list->First()->DefaultSite == true){
+			return false;
+		}
 
-        Requirements::javascript('subsites/javascript/LeftAndMain_Subsites.js');
+		Requirements::javascript('subsites/javascript/LeftAndMain_Subsites.js');
 
-        $output = new ArrayList();
+		$output = new ArrayList();
 
-        foreach ($list as $subsite) {
-            $CurrentState = $subsite->ID == $currentSubsiteID ? 'selected' : '';
-    
-            $output->push(new ArrayData(array(
-                'CurrentState' => $CurrentState,
-                'ID' => $subsite->ID,
-                'Title' => Convert::raw2xml($subsite->Title)
-            )));
-        }
+		foreach($list as $subsite) {
+			$CurrentState = $subsite->ID == $currentSubsiteID ? 'selected' : '';
 
-        return $output;
-    }
+			$output->push(new ArrayData(array(
+				'CurrentState' => $CurrentState,
+				'ID' => $subsite->ID,
+				'Title' => Convert::raw2xml($subsite->Title),
+				'AbsoluteBaseURL' => $subsite->absoluteBaseURL() // hmk hamaka
+			)));
+		}
+
+		return $output;
+	}
 
     public function alternateMenuDisplayCheck($controllerName)
     {

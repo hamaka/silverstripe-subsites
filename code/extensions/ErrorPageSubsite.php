@@ -13,9 +13,20 @@ class ErrorPageSubsite extends DataExtension
     {
         $static_filepath = Config::inst()->get($this->owner->ClassName, 'static_filepath');
         $subdomainPart = "";
+
+        // HAMAKA: check if front-end, so DB reliance can be avoided
+		if (!is_subclass_of(Controller::curr(), "LeftAndMain")) {
+			//get domain-name from URL, for no-database scenario
+			if(isset($_SERVER['HTTP_HOST'])) {
+				$subdomainPart = ltrim ($_SERVER['HTTP_HOST'], 'www.');
+				return $static_filepath . "/error-{$statusCode}-{$subdomainPart}.html";
+			} else {
+				return false;
+			}
+		}
         
         // Try to get current subsite from session
-        $subsite = Subsite::currentSubsite(false);
+        $subsite = Subsite::currentSubsite();
         
         // since this function is called from Page class before the controller is created, we have to get subsite from domain instead
         if (!$subsite) {

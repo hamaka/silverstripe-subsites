@@ -102,22 +102,23 @@ class Subsite extends DataObject
      * @param boolean $cache
      * @return int ID of the current subsite instance
      */
-    public static function currentSubsiteID()
-    {
-        $id = null;
+   public static function currentSubsiteID() {
+		$id = NULL;
+/* hmk hamaka custom
+		if(isset($_GET['SubsiteID'])) {
+			$id = (int)$_GET['SubsiteID'];
+		}
+		else if (Subsite::$use_session_subsiteid) {
+			$id = Session::get('SubsiteID');
+		}
 
-        if (isset($_GET['SubsiteID'])) {
-            $id = (int)$_GET['SubsiteID'];
-        } elseif (Subsite::$use_session_subsiteid) {
-            $id = Session::get('SubsiteID');
-        }
+		if($id === NULL) {
+*/
+			$id = self::getSubsiteIDForDomain();
+//		}
 
-        if ($id === null) {
-            $id = self::getSubsiteIDForDomain();
-        }
-
-        return (int)$id;
-    }
+		return (int)$id;
+	}
     
     /**
      * Switch to another subsite through storing the subsite identifier in the current PHP session.
@@ -576,6 +577,21 @@ class Subsite extends DataObject
     {
         return true;
     }
+
+    	/**
+	 *
+	 * @return array
+	 */
+	public function providePermissions() {
+		return array(
+			'SUBSITE_ASSETS_CREATE_SUBSITE' => array(
+				'name' => _t('Subsite.MANAGE_ASSETS', 'Manage assets for subsites'),
+				'category' => _t('Permissions.PERMISSIONS_CATEGORY', 'Roles and access permissions'),
+				'help' => _t('Subsite.MANAGE_ASSETS_HELP', 'Ability to select the subsite to which an asset folder belongs. Requires "Access to Files & Images."'),
+				'sort' => 300
+			)
+		);
+	}
 
     /**
      * Show the configuration fields for each subsite

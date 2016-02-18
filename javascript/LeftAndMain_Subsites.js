@@ -5,10 +5,14 @@
 	'use strict';
 	$.entwine('ss', function($) {
 
-		$('#SubsitesSelect').entwine({
+			$('#SubsitesSelect').entwine({
 			onadd:function(){
 				this.on('change', function(){
-					window.location.search=$.query.set('SubsiteID', $(this).val());
+					var sel = document.getElementById('SubsitesSelect');
+					var selected = sel.options[sel.selectedIndex];
+					var subsiteurl = selected.getAttribute('data-subsiteurl');
+					//window.location.search=$.query.set('SubsiteID', $(this).val());
+					window.location.href=subsiteurl;
 				});
 			}
 		});
