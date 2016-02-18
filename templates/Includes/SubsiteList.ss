@@ -2,7 +2,7 @@
 	<div class="field dropdown">
 		<select id="SubsitesSelect">
 			<% loop $ListSubsites %>
-				<option value="$ID" $CurrentState>$Title</option>
+				<option data-subsiteurl=\"{$AbsoluteBaseURL}admin/\" value="$ID" $CurrentState>$Title</option>
 			<% end_loop %>
 		</select>
 	</div>
